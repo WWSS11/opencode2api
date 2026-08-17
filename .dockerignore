@@ -1,3 +1,7 @@
-*
-!Dockerfile
-!docker-entrypoint.sh
+.git
+.github
+.agents
+.codex
+config.json
+*.log
+opencode2api

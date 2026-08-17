@@ -58,21 +58,45 @@ WebUI 可查看最近一小时的请求率、成功率、状态码与延迟分�
 go build -o opencode2api ./
 ```
 
-## Docker Compose 部署
+## Docker 镜像与 Compose 部署
 
-服务器安装 Docker 与 Docker Compose 后，可以在克隆项目后直接启动：
+代码推送到 `main` 分支或推送 `v*` 标签后，GitHub Actions 会在云端构建 `linux/amd64`、`linux/arm64` 镜像并发布到 GitHub Container Registry：
+
+```text
+ghcr.io/wwss11/opencode2api:latest
+```
+
+`main` 分支会生成 `latest` 和 `sha-xxxxxxx` 标签，版本标签（例如 `v1.2.3`）还会生成 `1.2.3` 和 `1.2` 标签。也可以在仓库的 Actions 页面手动运行 `Build and publish Docker image`。
+
+首次发布后，请在 GitHub 软件包设置中将镜像设为 Public；公开镜像在服务器上无需登录即可拉取。如果保持 Private，需要先在服务器使用具有 `read:packages` 权限的 GitHub Personal Access Token 登录：
 
 ```bash
-git clone https://github.com/jasonxu114514/opencode2api.git
+echo "$GHCR_TOKEN" | docker login ghcr.io -u YOUR_GITHUB_USERNAME --password-stdin
+```
+
+服务器安装 Docker 与 Docker Compose 后，克隆仓库并准备配置：
+
+```bash
+git clone https://github.com/WWSS11/opencode2api.git
 cd opencode2api
+cp config.example.json config.json
+# 编辑 server_keys、zen_keys/go_keys，并修改 webui.password
+docker compose pull
 docker compose up -d
 ```
 
+Compose 只会从 GHCR 拉取已经构建好的镜像，不会在服务器本地编译。以后更新服务时执行：
 
 ```bash
-cp config.example.json config.json
-# 编辑 server_keys、zen_keys/go_keys，并修改 webui.password
-docker compose restart
+git pull
+docker compose pull
+docker compose up -d
+```
+
+如需固定版本，避免 `latest` 自动变化，可在项目目录创建 `.env`：
+
+```dotenv
+OPENCODE2API_IMAGE=ghcr.io/wwss11/opencode2api:1.2.3
 ```
 
 ```bash
